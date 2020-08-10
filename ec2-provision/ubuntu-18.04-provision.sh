@@ -1,4 +1,10 @@
-#!/bin/bash
+#!/bin/bash    
+#title          :Provision for TimeOff-Management Application on EC2 - Ubuntu 18.04 AMI
+#author         :dvillarraga
+#date           :2020-08-10
+#==============================================================================
+
+install() {
 ### Installing Locales
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
@@ -12,3 +18,6 @@ git clone https://github.com/dvillarraga/timeoff-management-application.git
 cd timeoff-management-application
 npm install
 npm start
+}
+
+"$@"

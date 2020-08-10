@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CloudFormation template for TimeOff-Management Application'
+Resources:
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-003634241a8fcdec0
+      InstanceType: t2.micro
+      SecurityGroups:
+      - Ref: WebServerSecurityGroup
+      KeyName: infragsoft
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          wget https://raw.githubusercontent.com/dvillarraga/timeoff-provision/master/ec2-provision/ubuntu-18.04-provision.sh -O /tmp/ami-provision.sh
+          sudo chmod +x /tmp/ami-provision.sh
+          /tmp/ami-provision.sh install
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group for TimeOff-Application"
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: '3000'
+        IpProtocol: tcp
+        ToPort: '3000'
+      - CidrIp: 0.0.0.0/0
+        FromPort: '22'
+        IpProtocol: tcp
+        ToPort: '22'
+Outputs:
+  PublicIP:
+    Description: EC2 public IP
+    Value: !GetAtt WebServer.PublicIp

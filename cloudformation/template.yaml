@@ -4,7 +4,7 @@ Resources:
   WebServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-003634241a8fcdec0
+      ImageId: ami-0873b46c45c11058d
       InstanceType: t2.micro
       SecurityGroups:
       - Ref: WebServerSecurityGroup
@@ -12,7 +12,9 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          wget https://raw.githubusercontent.com/dvillarraga/timeoff-provision/master/ec2-provision/ubuntu-18.04-provision.sh -O /tmp/ami-provision.sh
+          set -e -u
+          sudo yum update -y
+          wget https://raw.githubusercontent.com/dvillarraga/timeoff-provision/master/ec2-provision/amazon-linux-2-provision.sh -O /tmp/ami-provision.sh
           sudo chmod +x /tmp/ami-provision.sh
           /tmp/ami-provision.sh install
   WebServerSecurityGroup:

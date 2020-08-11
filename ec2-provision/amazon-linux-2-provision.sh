@@ -8,8 +8,14 @@ install() {
 ### Installing Locales
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
-### Installing Packages ( Node JS )
-sudo yum install -y git gcc-c++ make
+### Installing Packages
+sudo yum install -y git gcc-c++ make ruby wget
+# Installing CodeDeploy Agent
+cd /home/ec2-user
+wget https://aws-codedeploy-us-west-2.s3.us-west-2.amazonaws.com/latest/install
+sudo chmod +x ./install
+sudo ./install auto
+# Installing Node
 curl -sL https://rpm.nodesource.com/setup_12.x | sudo -E bash -
 sudo yum install -y nodejs
 ### Cloning and starting the project

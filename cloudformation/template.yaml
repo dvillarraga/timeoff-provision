@@ -11,7 +11,7 @@ Parameters:
     Description: The GitHub repository name
     Type: String
   GitHubToken:
-    Default: 'c4c42c2c759e86d82fdc527fac5281a01d126b9a'
+    Default: 'd320b34e001fb6a45170889f8afe62dff3324731'
     Description: OAuth GitHubToken
     Type: String
 # RESOURCES
@@ -39,7 +39,7 @@ Resources:
             Service: codebuild.amazonaws.com
           Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess  
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
   CodeDeployIAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -54,7 +54,7 @@ Resources:
           - 'sts:AssumeRole'
       Path: '/'
       ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole'
+      - 'arn:aws:iam::aws:policy/AdministratorAccess'
   # ARTIFACT AND PIPELINE 
   MyArtifactStore:
     Type: "AWS::S3::Bucket"

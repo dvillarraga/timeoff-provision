@@ -1,6 +1,152 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'AWS CloudFormation template for TimeOff-Management Application'
+# PARAMETERS
+Parameters:
+  GitHubOwner:
+    Default: dvillarraga
+    Description: The owner or organization for the GitHub project
+    Type: String
+  GitHubRepo:
+    Default: 'timeoff-management-application'
+    Description: The GitHub repository name
+    Type: String
+  GitHubToken:
+    Default: 'c4c42c2c759e86d82fdc527fac5281a01d126b9a'
+    Description: OAuth GitHubToken
+    Type: String
+# RESOURCES
 Resources:
+  # ROLES
+  CodePipeLineExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess  
+  CodeDeployIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'codedeploy.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Path: '/'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole'
+  # ARTIFACT AND PIPELINE 
+  MyArtifactStore:
+    Type: "AWS::S3::Bucket"
+    Properties: 
+      VersioningConfiguration:
+        Status: Enabled
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: GorillaTestPipeline
+      ArtifactStore:
+        Location: !Ref MyArtifactStore
+        Type: S3
+      RoleArn: 
+        Fn::GetAtt: [ CodePipeLineExecutionRole, Arn ]
+      Stages:
+        - Name: Source
+          Actions: 
+            - Name: GithubSource
+              ActionTypeId: 
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Repo: !Ref GitHubRepo
+                Branch: master
+                Owner: !Ref GitHubOwner
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+              - Name: SourceArtifact
+        - Name: Build
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              InputArtifacts:
+                - Name: SourceArtifact
+              Configuration:
+                ProjectName: !Ref ApplicationCi
+              OutputArtifacts:
+                - Name: BuildOutputArtifact
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CodeDeploy
+              InputArtifacts:
+                - Name: BuildOutputArtifact
+              Configuration:
+                ApplicationName: !Ref Application
+                DeploymentGroupName: !Ref DeploymentGroup
+              RunOrder: 1
+
+  # CODEPIPELINE COMPONENTS
+  ApplicationCi:
+    Type: AWS::CodeBuild::Project
+    DependsOn: CodeBuildRole
+    Properties:
+      Name: GorillaTestCi
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+      ServiceRole: !Ref CodeBuildRole
+      TimeoutInMinutes: 15
+      Source:
+        Type: CODEPIPELINE
+  Application:
+    Type: "AWS::CodeDeploy::Application"
+    Properties:
+      ApplicationName: GorillaTestDeployApplication
+  DeploymentGroup:
+    Type: "AWS::CodeDeploy::DeploymentGroup"
+    Properties:
+      ApplicationName: GorillaTestDeployApplication
+      Ec2TagFilters:
+        - Key: DeploymentGroup
+          Type: KEY_AND_VALUE
+          Value: !Ref AWS::StackName
+      ServiceRoleArn:
+        Fn::GetAtt: [ CodeDeployIAMRole, Arn ]
+  # EC2 INSTANCE BY DEFAULT
   WebServer:
     Type: AWS::EC2::Instance
     Properties:
@@ -17,6 +163,11 @@ Resources:
           wget https://raw.githubusercontent.com/dvillarraga/timeoff-provision/master/ec2-provision/amazon-linux-2-provision.sh -O /tmp/ami-provision.sh
           sudo chmod +x /tmp/ami-provision.sh
           /tmp/ami-provision.sh install
+      Tags:
+        - Key: DeploymentGroup
+          Value: !Ref AWS::StackName
+        - Key: Name
+          Value: !Ref AWS::StackName
   WebServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -30,40 +181,5 @@ Resources:
         FromPort: '22'
         IpProtocol: tcp
         ToPort: '22'
-  CodeBuildRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          Effect: Allow
-          Principal:
-            Service: codebuild.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess
-  ApplicationCi:
-    Type: AWS::CodeBuild::Project
-    DependsOn: CodeBuildRole
-    Properties:
-      Name: GorillaTestCi
-      Artifacts:
-        Type: NO_ARTIFACTS
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
-        Type: LINUX_CONTAINER
-      ServiceRole: !Ref CodeBuildRole
-      TimeoutInMinutes: 15
-      Source:
-        Type: GITHUB
-        Location: https://github.com/dvillarraga/timeoff-management-application.git
-      Triggers:
-        Webhook: true
-        FilterGroups:
-          - - Type: EVENT
-              Pattern: PUSH
-Outputs:
-  PublicIP:
-    Description: EC2 public IP
-    Value: !GetAtt WebServer.PublicIp
+
+  

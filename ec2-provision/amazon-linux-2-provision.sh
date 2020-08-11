@@ -19,6 +19,7 @@ sudo ./install auto
 curl -sL https://rpm.nodesource.com/setup_12.x | sudo -E bash -
 sudo yum install -y nodejs
 ### Cloning and starting the project
+cd /home/ec2-user
 git clone https://github.com/dvillarraga/timeoff-management-application.git
 cd timeoff-management-application
 npm install

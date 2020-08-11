@@ -11,7 +11,7 @@ Parameters:
     Description: The GitHub repository name
     Type: String
   GitHubToken:
-    Default: 'd320b34e001fb6a45170889f8afe62dff3324731'
+    Default: '67d0595b0b351be11abb0e12688d24ea5340f82e'
     Description: OAuth GitHubToken
     Type: String
 # RESOURCES
@@ -50,6 +50,21 @@ Resources:
           Principal:
             Service:
             - 'codedeploy.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Path: '/'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/AdministratorAccess'
+  InstanceIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'ec2.amazonaws.com'
           Action:
           - 'sts:AssumeRole'
       Path: '/'
@@ -155,6 +170,7 @@ Resources:
       SecurityGroups:
       - Ref: WebServerSecurityGroup
       KeyName: infragsoft
+      IamInstanceProfile: !Ref MyIamInstanceProfile
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -168,6 +184,12 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: Name
           Value: !Ref AWS::StackName
+  # EC2 Components
+  MyIamInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles: 
+        - !Ref InstanceIAMRole
   WebServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:

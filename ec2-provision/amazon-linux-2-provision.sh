@@ -24,7 +24,7 @@ git clone https://github.com/dvillarraga/timeoff-management-application.git
 cd timeoff-management-application
 npm install
 sudo npm install pm2 -g
-pm2 --name TimeOffApplication start npm -- start
+sudo pm2 --name TimeOffApplication start npm -- start
 }
 
 "$@"

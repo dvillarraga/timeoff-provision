@@ -23,7 +23,8 @@ cd /home/ec2-user
 git clone https://github.com/dvillarraga/timeoff-management-application.git
 cd timeoff-management-application
 npm install
-npm start
+sudo npm install pm2 -g
+pm2 --name TimeOffApplication start npm -- start
 }
 
 "$@"

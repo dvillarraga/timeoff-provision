@@ -11,7 +11,7 @@ Parameters:
     Description: The GitHub repository name
     Type: String
   GitHubToken:
-    Default: '67d0595b0b351be11abb0e12688d24ea5340f82e'
+    Default: 'OAuthTokenGoesHere'
     Description: OAuth GitHubToken
     Type: String
 # RESOURCES
@@ -169,7 +169,6 @@ Resources:
       InstanceType: t2.micro
       SecurityGroups:
       - Ref: WebServerSecurityGroup
-      KeyName: infragsoft
       IamInstanceProfile: !Ref MyIamInstanceProfile
       UserData:
         Fn::Base64: !Sub |
@@ -196,12 +195,12 @@ Resources:
       GroupDescription: "Security Group for TimeOff-Application"
       SecurityGroupIngress:
       - CidrIp: 0.0.0.0/0
-        FromPort: '3000'
+        FromPort: '443'
         IpProtocol: tcp
-        ToPort: '3000'
+        ToPort: '443'
       - CidrIp: 0.0.0.0/0
-        FromPort: '22'
+        FromPort: '80'
         IpProtocol: tcp
-        ToPort: '22'
+        ToPort: '80'
 
   
